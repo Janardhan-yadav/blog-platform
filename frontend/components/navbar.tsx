@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -15,6 +16,13 @@ import { PenTool, User, LogOut, Home } from "lucide-react"
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
+  const router = useRouter()
+
+  const goToProfile = () => {
+    if (user?.id) {
+      router.push(`/profile/${user.id}`)
+    }
+  }
 
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -47,6 +55,12 @@ export default function Navbar() {
                     New Post
                   </Link>
                 </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href={`/profile/${user?.id}`}className="flex items-center gap-2">
+                    <PenTool className="w-4 h-4" />
+                    Profile
+                  </Link>
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -64,11 +78,9 @@ export default function Navbar() {
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        Profile
-                      </Link>
+                    <DropdownMenuItem onClick={goToProfile} className="flex items-center gap-2 cursor-pointer">
+                      <User className="w-4 h-4" />
+                      Profile
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-destructive">

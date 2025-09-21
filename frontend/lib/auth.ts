@@ -4,6 +4,7 @@ export interface User {
   name: string
   profilePicture?: string
   bio?: string
+  createdAt?: string
 }
 
 export interface AuthState {

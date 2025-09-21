@@ -22,6 +22,7 @@ export default function PostPage() {
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [newComment, setNewComment] = useState("")
 
   // Mock data for development
   const mockPost: BlogPost = {
@@ -187,14 +188,20 @@ Happy coding!
 
   const fetchPost = async () => {
     setLoading(true)
-    try {
-      // In a real app, this would be an API call
-      // const response = await api.get(`/posts/${params.id}`);
-      // setPost(response.data);
+    // try {
+    //   // In a real app, this would be an API call
+    //   // const response = await api.get(`/posts/${params.id}`);
+    //   // setPost(response.data);
 
-      // Mock API delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setPost(mockPost)
+    //   // Mock API delay
+    //   await new Promise((resolve) => setTimeout(resolve, 500))
+    //   setPost(mockPost)
+     try {
+    const response = await fetch(`http://localhost:5000/api/posts/${params.id}`, {
+      credentials: "include", // if using cookies for auth
+    })
+    const data = await response.json()
+    setPost(data.post)
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load post")
     } finally {
@@ -221,15 +228,23 @@ Happy coding!
       // In a real app, this would be an API call
       // await api.post(`/posts/${post.id}/like`);
 
-      setPost((prev) =>
-        prev
-          ? {
-              ...prev,
-              isLiked: !prev.isLiked,
-              likesCount: prev.isLiked ? prev.likesCount - 1 : prev.likesCount + 1,
-            }
-          : null,
-      )
+      // setPost((prev) =>
+      //   prev
+      //     ? {
+      //         ...prev,
+      //         isLiked: !prev.isLiked,
+      //         likesCount: prev.isLiked ? prev.likesCount - 1 : prev.likesCount + 1,
+      //       }
+      //     : null,
+      // )
+      const response = await fetch(`http://localhost:5000/api/posts/${post.id}/like`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    })
+    const data = await response.json()
+    setPost((prev) => prev ? { ...prev, isLiked: data.isLiked, likesCount: data.likesCount } : null)
+ 
     } catch (error) {
       console.error("Failed to like post:", error)
     }
@@ -242,14 +257,25 @@ Happy coding!
       // In a real app, this would be an API call
       // await api.post(`/posts/${post.id}/bookmark`);
 
-      setPost((prev) =>
-        prev
-          ? {
-              ...prev,
-              isBookmarked: !prev.isBookmarked,
-            }
-          : null,
-      )
+      // setPost((prev) =>
+      //   prev
+      //     ? {
+      //         ...prev,
+      //         isBookmarked: !prev.isBookmarked,
+      //       }
+      //     : null,
+      // )
+       const response = await fetch(`http://localhost:5000/api/posts/${post.id}/bookmark`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    })
+    const data = await response.json()
+    setPost((prev) =>
+      prev
+        ? { ...prev, isBookmarked: data.isBookmarked }
+        : null
+    )
     } catch (error) {
       console.error("Failed to bookmark post:", error)
     }
@@ -262,27 +288,36 @@ Happy coding!
       // In a real app, this would be an API call
       // const response = await api.post(`/posts/${post.id}/comments`, { content });
 
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        content,
-        author: {
-          id: user.id,
-          name: user.name,
-          profilePicture: user.profilePicture,
-        },
-        createdAt: new Date().toISOString(),
-        postId: post.id,
-      }
+      // const newComment: Comment = {
+      //   id: Date.now().toString(),
+      //   content,
+      //   author: {
+      //     id: user.id,
+      //     name: user.name,
+      //     profilePicture: user.profilePicture,
+      //   },
+      //   createdAt: new Date().toISOString(),
+      //   postId: post.id,
+      // }
 
-      setComments((prev) => [newComment, ...prev])
-      setPost((prev) =>
-        prev
-          ? {
-              ...prev,
-              commentsCount: prev.commentsCount + 1,
-            }
-          : null,
-      )
+      // setComments((prev) => [newComment, ...prev])
+      // setPost((prev) =>
+      //   prev
+      //     ? {
+      //         ...prev,
+      //         commentsCount: prev.commentsCount + 1,
+      //       }
+      //     : null,
+      // )
+      const response = await fetch(`http://localhost:5000/api/posts/${post.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ content }),
+    })
+    const data = await response.json()
+    setComments((prev) => [...prev, data.comment]) // append new comment
+    setNewComment("")
     } catch (error) {
       console.error("Failed to add comment:", error)
       throw error
@@ -368,8 +403,8 @@ Happy coding!
           <PostActions
             postId={post.id}
             likesCount={post.likesCount}
-            isLiked={post.isLiked}
-            isBookmarked={post.isBookmarked}
+            isLiked={post.isLiked ?? false}
+            isBookmarked={post.isBookmarked ?? false}
             onLike={handleLike}
             onBookmark={handleBookmark}
           />
@@ -438,11 +473,15 @@ Happy coding!
           </div>
 
           <Separator className="my-8" />
-
           {/* Comments Section */}
-          <CommentSection postId={post.id} comments={comments} onAddComment={handleAddComment} />
+          <CommentSection
+            postId={post.id}
+            comments={comments}
+            onAddComment={handleAddComment}
+          />
         </article>
       </div>
     </div>
   )
 }
+

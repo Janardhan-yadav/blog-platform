@@ -8,6 +8,8 @@ import Pagination from "@/components/pagination"
 import { Button } from "@/components/ui/button"
 import { Loader2, RefreshCw } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import Link from "next/link"
+import { User } from "lucide-react"
 
 export default function HomePage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
@@ -21,7 +23,7 @@ export default function HomePage() {
     itemsPerPage: 10,
   })
   const [popularTags, setPopularTags] = useState<string[]>([])
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
   // Mock data for development
   const mockPosts: BlogPost[] = [
@@ -121,31 +123,20 @@ export default function HomePage() {
   const fetchPosts = async () => {
     setLoading(true)
     try {
-      // In a real app, this would be an API call
-      // const response = await api.get('/posts', {
-      //   params: {
-      //     page: pagination.currentPage,
-      //     search: searchQuery,
-      //     tags: selectedTags.join(','),
-      //   },
-      // });
+      await new Promise((resolve) => setTimeout(resolve, 500)) // mock delay
 
-      // Mock API delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      // Filter mock data based on search and tags
       let filteredPosts = mockPosts
-
       if (searchQuery) {
         filteredPosts = filteredPosts.filter(
           (post) =>
             post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()),
+            post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
         )
       }
-
       if (selectedTags.length > 0) {
-        filteredPosts = filteredPosts.filter((post) => selectedTags.some((tag) => post.tags.includes(tag)))
+        filteredPosts = filteredPosts.filter((post) =>
+          selectedTags.some((tag) => post.tags.includes(tag))
+        )
       }
 
       setPosts(filteredPosts)
@@ -163,8 +154,6 @@ export default function HomePage() {
 
   const fetchPopularTags = async () => {
     try {
-      // In a real app, this would be an API call
-      // const response = await api.get('/tags/popular');
       setPopularTags(mockPopularTags)
     } catch (error) {
       console.error("Failed to fetch popular tags:", error)
@@ -184,40 +173,24 @@ export default function HomePage() {
 
   const handleLike = async (postId: string) => {
     if (!isAuthenticated) return
-
-    try {
-      // In a real app, this would be an API call
-      // await api.post(`/posts/${postId}/like`);
-
-      setPosts((prev) =>
-        prev.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                isLiked: !post.isLiked,
-                likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1,
-              }
-            : post,
-        ),
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              isLiked: !post.isLiked,
+              likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1,
+            }
+          : post
       )
-    } catch (error) {
-      console.error("Failed to like post:", error)
-    }
+    )
   }
 
   const handleBookmark = async (postId: string) => {
     if (!isAuthenticated) return
-
-    try {
-      // In a real app, this would be an API call
-      // await api.post(`/posts/${postId}/bookmark`);
-
-      setPosts((prev) =>
-        prev.map((post) => (post.id === postId ? { ...post, isBookmarked: !post.isBookmarked } : post)),
-      )
-    } catch (error) {
-      console.error("Failed to bookmark post:", error)
-    }
+    setPosts((prev) =>
+      prev.map((post) => (post.id === postId ? { ...post, isBookmarked: !post.isBookmarked } : post))
+    )
   }
 
   return (
@@ -225,7 +198,9 @@ export default function HomePage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4 text-balance">Discover Amazing Stories</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-4 text-balance">
+            Discover Amazing Stories
+          </h1>
           <p className="text-lg text-muted-foreground text-pretty">
             Explore insights, tutorials, and thoughts from our community of writers
           </p>

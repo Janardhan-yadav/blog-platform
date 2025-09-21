@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import axios from "axios"
 import { useAuth } from "@/contexts/auth-context"
 import type { BlogPost } from "@/types/blog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -14,7 +15,7 @@ import { Edit, Calendar, BookOpen, Heart, MessageCircle } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [userPosts, setUserPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -22,48 +23,7 @@ export default function ProfilePage() {
     totalLikes: 0,
     totalComments: 0,
   })
-
-  // Mock user posts
-  const mockUserPosts: BlogPost[] = [
-    {
-      id: "1",
-      title: "Getting Started with Next.js 15",
-      content: "Next.js 15 brings exciting new features...",
-      excerpt:
-        "Explore the latest features in Next.js 15 including improved performance, better developer experience, and new APIs.",
-      author: {
-        id: user?.id || "1",
-        name: user?.name || "Sarah Chen",
-        profilePicture: user?.profilePicture || "/developer-portrait.png",
-      },
-      tags: ["Next.js", "React", "Web Development", "JavaScript"],
-      createdAt: "2024-01-15T10:00:00Z",
-      updatedAt: "2024-01-15T10:00:00Z",
-      likesCount: 24,
-      commentsCount: 8,
-      isLiked: false,
-      isBookmarked: false,
-    },
-    {
-      id: "5",
-      title: "Building Scalable React Applications",
-      content: "Learn how to structure large React applications...",
-      excerpt:
-        "Best practices for organizing components, managing state, and optimizing performance in large-scale React applications.",
-      author: {
-        id: user?.id || "1",
-        name: user?.name || "Sarah Chen",
-        profilePicture: user?.profilePicture || "/developer-portrait.png",
-      },
-      tags: ["React", "Architecture", "Best Practices", "Performance"],
-      createdAt: "2024-01-10T14:30:00Z",
-      updatedAt: "2024-01-10T14:30:00Z",
-      likesCount: 18,
-      commentsCount: 5,
-      isLiked: false,
-      isBookmarked: false,
-    },
-  ]
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchUserPosts()
@@ -71,29 +31,28 @@ export default function ProfilePage() {
 
   const fetchUserPosts = async () => {
     if (!user) return
-
     setLoading(true)
+    setError(null)
+
     try {
-      // In a real app, this would be an API call
-      // const response = await api.get(`/users/${user.id}/posts`);
-      // setUserPosts(response.data.posts);
+      const response = await axios.get(`/api/users/${user.id}/posts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
-      // Mock API delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const posts: BlogPost[] = response.data.posts
+      setUserPosts(posts)
 
-      setUserPosts(mockUserPosts)
-
-      // Calculate stats
-      const totalLikes = mockUserPosts.reduce((sum, post) => sum + post.likesCount, 0)
-      const totalComments = mockUserPosts.reduce((sum, post) => sum + post.commentsCount, 0)
+      const totalLikes = posts.reduce((sum, post) => sum + post.likesCount, 0)
+      const totalComments = posts.reduce((sum, post) => sum + post.commentsCount, 0)
 
       setStats({
-        totalPosts: mockUserPosts.length,
+        totalPosts: posts.length,
         totalLikes,
         totalComments,
       })
-    } catch (error) {
-      console.error("Failed to fetch user posts:", error)
+    } catch (err: any) {
+      console.error("Failed to fetch user posts:", err)
+      setError(err?.response?.data?.message || "Failed to load posts")
     } finally {
       setLoading(false)
     }
@@ -127,9 +86,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (!user) {
-    return null
-  }
+  if (!user) return null
 
   return (
     <ProtectedRoute>
@@ -157,7 +114,7 @@ export default function ProfilePage() {
                     <h1 className="text-3xl font-bold text-foreground mb-2">{user.name}</h1>
                     <p className="text-muted-foreground flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      Joined {formatDistanceToNow(new Date("2023-06-01"), { addSuffix: true })}
+                      Joined {formatDistanceToNow(new Date(user.createdAt || "2023-06-01"), { addSuffix: true })}
                     </p>
                   </div>
 
@@ -206,6 +163,8 @@ export default function ProfilePage() {
                   <p className="text-muted-foreground">Loading your posts...</p>
                 </div>
               </div>
+            ) : error ? (
+              <p className="text-center text-destructive py-12">{error}</p>
             ) : userPosts.length > 0 ? (
               <div className="space-y-6">
                 {userPosts.map((post) => (
